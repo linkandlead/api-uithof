@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { relatieRecord } from "./relatie";
+import { eersteEmail, relatieRecord } from "./relatie";
 
 describe("relatieRecord", () => {
   it("vult een organisatie in zoals de boekhouding dat doet", () => {
@@ -44,5 +44,13 @@ describe("relatieRecord", () => {
     expect(r?.F0103).toBe("De Haagse Hogeschool - Faculteit Be");
     expect(r?.F0102).toBe("HAAGSE");
     expect(Object.values(r ?? {}).some((v) => v.includes("|"))).toBe(false);
+  });
+
+  it("geeft CASH maar één e-mailadres mee als SEM er meerdere heeft", () => {
+    const r = relatieRecord({ RelationID: 5, DebtorNumber: "152631", OrganizationName: "Reinier de Graaf", InvoiceCity: "Delft", EMailAddress: "factuurcontrole@rdgg.nl; j.ottenspeer@rdgg.nl; y.vrijmoed@rdgg.nl" });
+    expect(r?.F0120).toBe("factuurcontrole@rdgg.nl");
+    expect(eersteEmail("ongeldig, b@x.nl")).toBe("b@x.nl");
+    expect(eersteEmail("geen adres")).toBeUndefined();
+    expect(relatieRecord({ RelationID: 6, DebtorNumber: "152632", OrganizationName: "X", InvoiceCity: "Delft", EMailAddress: "kapot" })).not.toHaveProperty("F0120");
   });
 });
