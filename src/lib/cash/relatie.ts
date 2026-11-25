@@ -7,6 +7,17 @@ const LIDWOORDEN = new Set(["DE", "HET", "EEN", "THE", "VAN"]);
 const max = (s: string, n: number) => s.slice(0, n).trim();
 
 /**
+ * CASH-veld 0120 mag precies één e-mailadres bevatten (één @, max. 72 tekens). In SEM staan er soms
+ * meerdere, gescheiden door ; , of spaties: neem dan het eerste geldige adres.
+ */
+export function eersteEmail(s: string | null | undefined): string | undefined {
+  return (s ?? "")
+    .split(/[;,\s]+/)
+    .map((d) => d.trim())
+    .find((d) => d.length <= 72 && /^[^@\s|]+@[^@\s|]+\.[^@\s|]+$/.test(d));
+}
+
+/**
  * Relatie (record 101) voor CASH uit een SEM-klant, ingevuld zoals de boekhouding het doet:
  * zoeknaam = eerste woord van de naam in hoofdletters, soort D (debiteur), code plaats N + land NL,
  * valuta EUR; naam = organisatie (of persoon), t.a.v. = contactpersoon, adres en pc + plaats van het
@@ -24,7 +35,7 @@ export function relatieRecord(r: SemRelatie): Veld | null {
 
   const woorden = naam.toUpperCase().match(/[A-Z0-9]+/g) ?? [];
   const zoeknaam = (woorden.find((w) => !LIDWOORDEN.has(w)) ?? woorden[0] ?? nummer).slice(0, 10);
-  const email = schoon(r.EMailAddress);
+  const email = eersteEmail(r.EMailAddress);
   return {
     F0101: nummer,
     F0102: zoeknaam,
@@ -35,7 +46,7 @@ export function relatieRecord(r: SemRelatie): Veld | null {
     F0121: "D",
     ...(land === "NL" ? { F0129: "N" } : {}),
     F0130: land,
-    ...(email && email.length <= 72 ? { F0120: email } : {}),
+    ...(email ? { F0120: email } : {}),
     F0983: "EUR",
   };
 }
